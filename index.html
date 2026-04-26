@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Write You a Song</title>
+<meta name="description" content="Tell us about someone. We'll write them a song.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0D0D0D;--surface:#181818;--surface2:#222222;
+  --border:rgba(255,255,255,0.07);--border-active:rgba(255,255,255,0.18);
+  --text:#F0EDE8;--muted:rgba(240,237,232,0.35);--muted2:rgba(240,237,232,0.55);
+  --gold:#C9A96E;--gold-soft:rgba(201,169,110,0.13);
+  --green:#7EB89A;
+  --radius:14px;--radius-sm:10px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:none;z-index:1}
+.screen.active{opacity:1;pointer-events:auto;z-index:2}
+.screen-inner{width:100%;max-width:460px;display:flex;flex-direction:column;align-items:center}
+
+/* result screen scrolls */
+#s-result{overflow-y:auto;justify-content:flex-start;padding-top:60px;padding-bottom:80px}
+
+/* ── PROGRESS BAR ── */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:100;transition:width .4s ease;width:0}
+
+/* ── BACK BUTTON ── */
+#back-btn{position:fixed;top:16px;left:16px;z-index:100;background:none;border:none;color:var(--muted2);font-size:15px;font-family:'Outfit',sans-serif;font-weight:400;cursor:pointer;display:none;padding:8px;-webkit-tap-highlight-color:transparent}
+#back-btn:hover{color:var(--text)}
+
+/* ── INTRO ── */
+.orb-wrap{width:80px;height:80px;margin-bottom:32px;position:relative}
+.orb{width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(201,169,110,0.4),rgba(201,169,110,0.08) 70%);border:1px solid rgba(201,169,110,0.18);animation:orbPulse 3s ease-in-out infinite}
+@keyframes orbPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.08);opacity:1}}
+.orb-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--gold)}
+.intro-title{font-size:clamp(28px,6vw,38px);text-align:center;line-height:1.2;margin-bottom:14px;font-style:italic;font-weight:400}
+.intro-sub{color:var(--muted2);font-size:15px;text-align:center;line-height:1.5;margin-bottom:40px;max-width:320px}
+.cta{background:var(--gold);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:16px 36px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,opacity .15s}
+.cta:active{transform:scale(.97);opacity:.9}
+
+/* ── EYEBROW + SECTION TITLES ── */
+.eyebrow{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,5.5vw,30px);font-weight:300;text-align:center;line-height:1.25;margin-bottom:28px}
+
+/* ── TOPIC CARDS ── */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 14px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s}
+.card:active,.card.tapped{border-color:var(--gold);background:var(--gold-soft)}
+.card-emoji{font-size:24px;display:block;margin-bottom:6px}
+.card-label{font-size:14px;font-weight:400;color:var(--text)}
+
+/* ── GENRE GRID ── */
+.genre-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%}
+
+/* ── FEELING CARDS ── */
+.feeling-list{display:flex;flex-direction:column;gap:10px;width:100%}
+.feeling-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;display:flex;align-items:flex-start;gap:14px;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s}
+.feeling-card:active,.feeling-card.tapped{border-color:var(--gold);background:var(--gold-soft)}
+.feeling-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--muted);flex-shrink:0;margin-top:4px;transition:background .2s,border-color .2s}
+.feeling-card.tapped .feeling-dot{background:var(--green);border-color:var(--green)}
+.feeling-text h3{font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;margin-bottom:3px}
+.feeling-text p{font-size:13px;color:var(--muted2);font-weight:300}
+
+/* ── CUSTOM INPUT ROW ── */
+.custom-row{display:flex;align-items:center;gap:10px;width:100%;margin-top:4px}
+.custom-row input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:300;outline:none;transition:border-color .2s}
+.custom-row input:focus{border-color:var(--border-active)}
+.custom-row input::placeholder{color:var(--muted)}
+
+/* ── NAME INPUT ── */
+.name-label{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;align-self:flex-start}
+.name-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border-active);padding:12px 0;color:var(--text);font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;outline:none;margin-bottom:32px}
+.name-input::placeholder{color:var(--muted)}
+.name-continue{align-self:flex-end}
+
+/* ── QUESTION CHIPS ── */
+.chip-list{display:flex;flex-direction:column;gap:8px;width:100%;margin-bottom:14px}
+.chip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;font-size:14px;font-weight:400;color:var(--text);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s}
+.chip:active,.chip.tapped{border-color:var(--gold);background:var(--gold-soft)}
+
+/* ── LOADING ── */
+.loader-ring{width:72px;height:72px;border:2px solid rgba(201,169,110,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;display:flex;align-items:center;justify-content:center;margin-bottom:28px;position:relative}
+.loader-ring::after{content:"\266A";position:absolute;font-size:22px;color:var(--gold);animation:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-line{color:var(--muted2);font-size:14px;text-align:center;min-height:20px;transition:opacity .3s}
+
+/* ── RESULT ── */
+.result-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(126,184,154,0.12);color:var(--green);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:500;margin-bottom:20px}
+.result-title{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,6vw,34px);font-weight:400;font-style:italic;text-align:center;margin-bottom:8px;line-height:1.2}
+.result-meta{color:var(--muted2);font-size:13px;margin-bottom:28px;text-align:center}
+.result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 20px;width:100%;max-width:460px;margin-bottom:12px}
+.result-card-title{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.lyrics-section{margin-bottom:18px}
+.lyrics-section:last-child{margin-bottom:0}
+.lyrics-label{font-size:12px;font-weight:500;color:var(--gold);margin-bottom:6px;letter-spacing:0.5px}
+.lyrics-line{font-size:15px;line-height:1.6;color:var(--text);font-weight:300}
+.style-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.style-tag{background:var(--gold-soft);color:var(--gold);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500}
+.suno-prompt-text{font-size:14px;color:var(--muted2);line-height:1.5;font-weight:300}
+.suno-steps{counter-reset:suno}
+.suno-step{counter-increment:suno;font-size:14px;line-height:1.6;color:var(--text);font-weight:300;margin-bottom:8px;padding-left:24px;position:relative}
+.suno-step::before{content:counter(suno);position:absolute;left:0;color:var(--gold);font-weight:500}
+.copy-btn{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;cursor:pointer;margin-bottom:10px;transition:border-color .15s}
+.copy-btn:active{border-color:var(--gold)}
+.copy-btn.copied{border-color:var(--green);color:var(--green)}
+.copy-primary{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:500;margin-top:8px}
+.copy-primary:active{opacity:.9}
+.ghost-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;cursor:pointer;width:100%;margin-top:6px;transition:border-color .15s}
+.ghost-btn:active{border-color:var(--border-active);color:var(--text)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOutUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-18px)}}
+.anim-in{animation:fadeInUp .38s ease forwards}
+.anim-out{animation:fadeOutUp .22s ease forwards}
+</style>
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div id="progress"></div>
+
+<!-- BACK BUTTON -->
+<button id="back-btn" onclick="goBack()">&larr; Back</button>
+
+<!-- SCREEN 1: INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="screen-inner">
+    <div class="orb-wrap"><div class="orb"></div><div class="orb-note">&female;</div></div>
+    <h1 class="intro-title">Turn a feeling into a song.</h1>
+    <p class="intro-sub">A few taps. We write the lyrics. You bring it to life.</p>
+    <button class="cta" onclick="go('s-topic')">Let's make a song</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: TOPIC -->
+<div class="screen" id="s-topic">
+  <div class="screen-inner">
+    <div class="eyebrow">STEP 1</div>
+    <h2 class="section-title">Who is this song for?</h2>
+    <div class="card-grid" id="topic-grid"></div>
+    <div class="custom-row">
+      <input type="text" id="topic-custom" placeholder="Something else — type and press Enter&hellip;" onkeydown="if(event.key==='Enter'&&this.value.trim()){pickTopic(this.value.trim())}">
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: NAME -->
+<div class="screen" id="s-name">
+  <div class="screen-inner">
+    <div class="eyebrow">STEP 2</div>
+    <h2 class="section-title">What's their name?</h2>
+    <label class="name-label">THEIR NAME</label>
+    <input class="name-input" type="text" id="name-input" placeholder="e.g. Marco, Mom, Hurricane Maisie&hellip;" onkeydown="if(event.key==='Enter')submitName()">
+    <button class="cta name-continue" onclick="submitName()">Continue</button>
+  </div>
+</div>
+
+<!-- SCREEN 4: GENRE -->
+<div class="screen" id="s-genre">
+  <div class="screen-inner">
+    <div class="eyebrow">STEP 3</div>
+    <h2 class="section-title">What kind of song?</h2>
+    <div class="genre-grid" id="genre-grid"></div>
+  </div>
+</div>
+
+<!-- SCREEN 5: FEELING -->
+<div class="screen" id="s-feeling">
+  <div class="screen-inner">
+    <div class="eyebrow">STEP 4</div>
+    <h2 class="section-title">When they hear this &mdash; what hits them?</h2>
+    <div class="feeling-list" id="feeling-list"></div>
+  </div>
+</div>
+
+<!-- SCREEN 6: QUESTIONS -->
+<div class="screen" id="s-q">
+  <div class="screen-inner">
+    <div class="eyebrow" id="q-eyebrow">QUESTION 1 OF 6</div>
+    <h2 class="section-title" id="q-title"></h2>
+    <div class="chip-list" id="q-chips"></div>
+    <div class="custom-row">
+      <input type="text" id="q-custom" placeholder="&#9998; Write your own answer&hellip;" onkeydown="if(event.key==='Enter'&&this.value.trim()){pickAnswer(this.value.trim());this.value=''}">
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 7: LOADING -->
+<div class="screen" id="s-loading">
+  <div class="screen-inner">
+    <div class="loader-ring"></div>
+    <h2 class="section-title">Writing your song&hellip;</h2>
+    <p class="loading-line" id="loading-line"></p>
+  </div>
+</div>
+
+<!-- SCREEN 8: RESULT -->
+<div class="screen" id="s-result">
+  <div class="screen-inner">
+    <div class="result-badge">&diams; Your song is ready</div>
+    <h2 class="result-title" id="r-title"></h2>
+    <p class="result-meta" id="r-meta"></p>
+
+    <div class="result-card">
+      <div class="result-card-title">LYRICS</div>
+      <div id="r-lyrics"></div>
+    </div>
+    <button class="copy-btn" onclick="copyText('lyrics', this)">Copy Lyrics</button>
+
+    <div class="result-card" style="margin-top:8px">
+      <div class="result-card-title">SUNO STYLE PROMPT</div>
+      <div class="style-tags" id="r-tags"></div>
+      <p class="suno-prompt-text" id="r-suno-prompt"></p>
+    </div>
+    <button class="copy-btn" onclick="copyText('prompt', this)">Copy Prompt</button>
+
+    <div class="result-card" style="margin-top:8px">
+      <div class="result-card-title">HOW TO USE SUNO</div>
+      <div class="suno-steps">
+        <div class="suno-step">Go to suno.com and sign in or create a free account.</div>
+        <div class="suno-step">Click Create, then enable Custom Mode (toggle top right).</div>
+        <div class="suno-step">Paste your lyrics in the Lyrics field. Paste the Style Prompt in Style of Music.</div>
+        <div class="suno-step">Enter the song title shown above.</div>
+        <div class="suno-step">Hit Create. Two versions generate &mdash; keep the one that lands hardest.</div>
+      </div>
+    </div>
+
+    <button class="copy-btn copy-primary" onclick="copyText('all', this)">Copy Everything</button>
+    <button class="ghost-btn" onclick="resetApp()">Make another song</button>
+  </div>
+</div>
+
+<script>
+/* ── STATE ── */
+var S = { topic: '', name: '', genre: '', feeling: '', answers: {} };
+var screenHist = ['s-intro'];
+var qIdx = 0;
+var currentQB = null;
+var songResult = null;
+
+/* ── DATA ── */
+var TOPICS = [
+  ['\uD83D\uDC6B','A sibling'],['\uD83E\uDDE1','A parent'],['\u2728','A best friend'],['\uD83D\uDC9B','A partner'],
+  ['\uD83C\uDF31','A child'],['\uD83D\uDC3E','A pet'],['\uD83C\uDF93','A milestone'],['\uD83D\uDD4A\uFE0F','A loss']
+];
+
+var GENRES = [
+  ['\uD83E\uDD20','Country'],['\uD83C\uDF1F','Pop'],['\uD83C\uDFB6','R&B / Soul'],
+  ['\uD83E\uDE97','Folk / Indie'],['\uD83C\uDFA4','Hip Hop'],['\uD83C\uDFB8','Rock'],
+  ['\uD83C\uDFB7','Jazz'],['\uD83C\uDFBB','Cinematic'],['\uD83C\uDF0A','Electronic']
+];
+
+var FEELINGS = [
+  ['\uD83E\uDD79','I want them to cry','The good kind. Overwhelmed with love.'],
+  ['\uD83D\uDE02','I want them to laugh','The kind that brings up everything.'],
+  ['\uD83D\uDCAB','I want them to feel seen','Like someone finally said it.'],
+  ['\uD83C\uDF1F','I want them to feel proud','Of who they are. Of how far we\'ve come.'],
+  ['\uD83D\uDD50','I want them to remember','A moment. A feeling. A version of us.']
+];
+
+var QB = {
+  sibling: [
+    { q:'Growing up, what was the dynamic?', opts:['Best friends from day one','We fought but always had each other','I looked up to them','They looked up to me','We were in our own worlds \u2014 until we weren\'t'] },
+    { q:'A memory you never want to forget.', opts:['Something we got away with together','A trip we still talk about','Something dumb that became a legend','A quiet moment no one else knows about'] },
+    { q:'How has the relationship changed over the years?', opts:['Only gotten closer','We drifted and found our way back','Life got busy but the bond never changed','We understand each other more now','It\'s complicated \u2014 but we\'re still here'] },
+    { q:'Something they did you\'ve never fully thanked them for.', opts:['Showed up when I needed it most','Believed in me before I did','Let me be who I needed to be','Kept my secret','Been my person when I had no one'] },
+    { q:'A detail only the two of you share.', opts:['A nickname or phrase only we use','A running joke that never gets old','Something from home only we remember','A song or show that\'s just ours'] },
+    { q:'The one thing you want them to hear.', opts:['Having you as my sibling is a gift','We\'ve been through it \u2014 and I\'d do it again','I don\'t say it enough but I love you','You made me who I am','Here\'s to all the years still ahead'] }
+  ],
+  parent: [
+    { q:'One word to describe them.', opts:['Strong','Sacrificing','Funny','Wise','Complicated','My everything'] },
+    { q:'Something they taught you that you carry every day.', opts:['Work hard \u2014 always','Show up for the people you love','Laugh at yourself','Nothing is permanent','How to love without conditions'] },
+    { q:'A moment \u2014 big or small \u2014 that captures who they are.', opts:['Something they gave up for me','A time they showed up when it mattered','Something they said I\'ve never forgotten','The quiet way they handle hard things'] },
+    { q:'What do you understand about them now that you didn\'t growing up?', opts:['How hard they worked just to keep things together','That they were figuring it out too','How much they sacrificed without saying a word','That they love differently than they say it'] },
+    { q:'What\'s the occasion?', opts:['Their birthday','A holiday','Just because','A milestone','No occasion \u2014 I just want them to know'] },
+    { q:'What do you most want them to feel?', opts:['That they did a good job','That I see them \u2014 really see them','That everything they gave me mattered','That I love them more than I say','That I\'m proud to be their kid'] }
+  ],
+  friend: [
+    { q:'How did you become friends?', opts:['School \u2014 we never really left','Work threw us together and we stayed','Right place, right time','A mutual friend who doesn\'t know what they started','Gradual and then all at once'] },
+    { q:'What makes this friendship different from all the rest?', opts:['We pick up right where we left off','They know my worst and stay anyway','We\'ve been through the real stuff together','They make me funnier and braver','It just feels effortless'] },
+    { q:'A story that\'s just the two of you.', opts:['A trip that went sideways in the best way','A night we still talk about','Something we survived together','An inside joke that will never die'] },
+    { q:'When did they show up in a way that really mattered?', opts:['During a breakup or hard personal time','When I was at my lowest','When everyone else disappeared','In a quiet way \u2014 without me even asking'] },
+    { q:'What\'s the current chapter of this friendship?', opts:['Same city, deep in it together','Different cities \u2014 but nothing has changed','We\'ve grown a lot, and grown together','Life is busy but we\'re still us'] },
+    { q:'What does this song need to say?', opts:['You are irreplaceable','I don\'t know who I\'d be without you','You make my life so much better','Thank you \u2014 for all of it','I love you \u2014 in the full non-weird way'] }
+  ],
+  partner: [
+    { q:'How would you describe what you\'ve built together?', opts:['A life I never could have imagined','A partnership that makes everything easier','Something complicated and beautiful','A family \u2014 in every sense','A love story still being written'] },
+    { q:'A small detail about them you quietly adore.', opts:['Something they do every day without thinking','The way they are with the people they love','Something that used to drive me crazy \u2014 I\'d miss it now','Something only I ever notice'] },
+    { q:'A hard thing you\'ve gotten through together.', opts:['Something big we didn\'t see coming','A season where everything felt uncertain','Something that tested us and made us stronger','Just being human together, honestly'] },
+    { q:'A moment you\'d relive if you could.', opts:['The moment I knew','An ordinary day that was somehow perfect','Something we laughed about until we couldn\'t breathe','The first time things felt real'] },
+    { q:'What do you want to say that you don\'t say enough?', opts:['I choose you \u2014 every single day','What you carry for us doesn\'t go unnoticed','You are the best decision I ever made','You make me better'] },
+    { q:'What\'s the occasion?', opts:['Anniversary','Birthday','Just because','Something we\'re celebrating','No occasion \u2014 I just want them to know'] }
+  ],
+  child: [
+    { q:'How has having them changed you?', opts:['I love differently than I knew was possible','I\'m braver \u2014 because I have to be','Everything is harder and richer at once','I see the world through completely new eyes'] },
+    { q:'One small thing about them you never want to forget.', opts:['The way they laugh','Something they say that\'s just them','A ritual or habit we share','The way they look at the world'] },
+    { q:'What do you want to tell them about themselves?', opts:['You are braver than you know','You make everyone around you better','You are loved beyond measure','I\'m so proud of who you\'re becoming'] },
+    { q:'What milestone is this marking?', opts:['A birthday \u2014 they\'re growing up fast','A new chapter \u2014 school, growing, changing','Just right now, this exact age and moment','No milestone. Pure love.'] },
+    { q:'What tone are you going for?', opts:['Joyful and celebratory','Tender and emotional','Playful and fun','Quiet and sincere'] },
+    { q:'What do you most want them to know?', opts:['I loved you before I ever met you','Every single day with you is a gift','You can do anything \u2014 and I\'ll be right here','Nothing in this world matters more than you'] }
+  ],
+  default: [
+    { q:'How long has this been part of your life?', opts:['My whole life','More than 10 years','5\u201310 years','A few years','Not long \u2014 but feels like forever'] },
+    { q:'One word that captures it.', opts:['Unbreakable','Rare','Complicated','Easy','Everything'] },
+    { q:'A memory or moment that defines it.', opts:['A road trip or adventure','A hard time we got through together','Something absurd that became legendary','A quiet moment I never forgot'] },
+    { q:'Something you\'ve never fully said thank you for.', opts:['Showed up when no one else did','Believed in me before I did','Made me laugh when I needed it most','Loved me through the hard version of me'] },
+    { q:'A detail only you two would understand.', opts:['A phrase or nickname','A place only we know','A habit or ritual we share','A song or show that\'s ours'] },
+    { q:'What do you want them to walk away knowing?', opts:['You changed my life','I don\'t say it enough \u2014 but I love you','We\'re in this together, always','Thank you. For all of it.'] }
+  ]
+};
+
+/* ── QUESTION BANK ROUTING ── */
+function getQB(topic) {
+  var t = topic.toLowerCase();
+  if (t.includes('sibling') || t.includes('brother') || t.includes('sister')) return QB.sibling;
+  if (t.includes('parent') || t.includes('mom') || t.includes('dad') || t.includes('mother') || t.includes('father')) return QB.parent;
+  if (t.includes('friend')) return QB.friend;
+  if (t.includes('partner') || t.includes('spouse') || t.includes('husband') || t.includes('wife')) return QB.partner;
+  if (t.includes('child') || t.includes('toddler') || t.includes('baby') || t.includes('kid') || t.includes('son') || t.includes('daughter')) return QB.child;
+  return QB.default;
+}
+
+/* ── SAFE DOM HELPERS ── */
+function el(tag, cls, textContent) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (textContent) e.textContent = textContent;
+  return e;
+}
+
+/* ── INIT RENDER ── */
+function init() {
+  var tg = document.getElementById('topic-grid');
+  TOPICS.forEach(function(item) {
+    var d = el('div', 'card');
+    var emoji = el('span', 'card-emoji', item[0]);
+    var label = el('span', 'card-label', item[1]);
+    d.appendChild(emoji);
+    d.appendChild(label);
+    d.onclick = function() { tapCard(d, function() { pickTopic(item[1]); }); };
+    tg.appendChild(d);
+  });
+
+  var gg = document.getElementById('genre-grid');
+  GENRES.forEach(function(item) {
+    var d = el('div', 'card');
+    var emoji = el('span', 'card-emoji', item[0]);
+    var label = el('span', 'card-label', item[1]);
+    d.appendChild(emoji);
+    d.appendChild(label);
+    d.onclick = function() { tapCard(d, function() { pickGenre(item[1]); }); };
+    gg.appendChild(d);
+  });
+
+  var fl = document.getElementById('feeling-list');
+  FEELINGS.forEach(function(item) {
+    var d = el('div', 'feeling-card');
+    var dot = el('div', 'feeling-dot');
+    var textWrap = el('div', 'feeling-text');
+    var h = el('h3', null, item[0] + ' ' + item[1]);
+    var p = el('p', null, item[2]);
+    textWrap.appendChild(h);
+    textWrap.appendChild(p);
+    d.appendChild(dot);
+    d.appendChild(textWrap);
+    d.onclick = function() { tapCard(d, function() { pickFeeling(item[1] + ' \u2014 ' + item[2]); }); };
+    fl.appendChild(d);
+  });
+}
+
+/* ── TAP WITH FEEDBACK DELAY ── */
+function tapCard(elem, cb) {
+  elem.classList.add('tapped');
+  setTimeout(function() {
+    elem.classList.remove('tapped');
+    cb();
+  }, 190);
+}
+
+/* ── NAVIGATION ── */
+function go(id) {
+  var current = document.getElementById(screenHist[screenHist.length - 1]);
+  var next = document.getElementById(id);
+  if (!current || !next || current === next) return;
+
+  current.classList.add('anim-out');
+  setTimeout(function() {
+    current.classList.remove('active', 'anim-out', 'anim-in');
+    next.classList.add('active', 'anim-in');
+    screenHist.push(id);
+    updateChrome();
+    if (id === 's-name') setTimeout(function() { document.getElementById('name-input').focus(); }, 400);
+  }, 220);
+}
+
+function goBack() {
+  if (screenHist.length <= 1) return;
+  var currentId = screenHist[screenHist.length - 1];
+
+  if (currentId === 's-q' && qIdx > 0) {
+    qIdx--;
+    renderQuestion();
+    updateChrome();
+    return;
+  }
+
+  var current = document.getElementById(currentId);
+  screenHist.pop();
+  var prevId = screenHist[screenHist.length - 1];
+  var prev = document.getElementById(prevId);
+
+  current.classList.add('anim-out');
+  setTimeout(function() {
+    current.classList.remove('active', 'anim-out', 'anim-in');
+    prev.classList.add('active', 'anim-in');
+    updateChrome();
+  }, 220);
+}
+
+function updateChrome() {
+  var id = screenHist[screenHist.length - 1];
+  var bar = document.getElementById('progress');
+  var back = document.getElementById('back-btn');
+
+  var hideBack = ['s-intro', 's-loading', 's-result'];
+  back.style.display = hideBack.indexOf(id) !== -1 ? 'none' : 'block';
+
+  var hideProgress = ['s-intro', 's-loading', 's-result'];
+  if (hideProgress.indexOf(id) !== -1) {
+    bar.style.width = '0';
+    return;
+  }
+
+  var flow = ['s-topic', 's-name', 's-genre', 's-feeling', 's-q'];
+  var idx = flow.indexOf(id);
+  if (idx === -1) return;
+
+  var pct;
+  if (id === 's-q') {
+    pct = ((4 + qIdx / 6) / 5) * 100;
+  } else {
+    pct = (idx / 5) * 100;
+  }
+  bar.style.width = Math.min(pct, 100) + '%';
+}
+
+/* ── PICKERS ── */
+function pickTopic(label) {
+  S.topic = label;
+  currentQB = getQB(label);
+  go('s-name');
+}
+
+function submitName() {
+  var v = document.getElementById('name-input').value.trim();
+  if (!v) return;
+  S.name = v;
+  go('s-genre');
+}
+
+function pickGenre(label) {
+  S.genre = label;
+  go('s-feeling');
+}
+
+function pickFeeling(label) {
+  S.feeling = label;
+  qIdx = 0;
+  renderQuestion();
+  go('s-q');
+}
+
+/* ── QUESTIONS ── */
+function renderQuestion() {
+  var qb = currentQB[qIdx];
+  document.getElementById('q-eyebrow').textContent = 'QUESTION ' + (qIdx + 1) + ' OF 6';
+  document.getElementById('q-title').textContent = qb.q;
+  document.getElementById('q-custom').value = '';
+
+  var list = document.getElementById('q-chips');
+  list.textContent = '';
+  qb.opts.forEach(function(opt) {
+    var d = el('div', 'chip', opt);
+    d.onclick = function() { tapCard(d, function() { pickAnswer(opt); }); };
+    list.appendChild(d);
+  });
+}
+
+function pickAnswer(ans) {
+  S.answers['q' + (qIdx + 1)] = ans;
+  if (qIdx < 5) {
+    qIdx++;
+    renderQuestion();
+    updateChrome();
+  } else {
+    generateSong();
+  }
+}
+
+/* ── LOADING LINES ── */
+var LOADING_LINES = [
+  'Listening to everything you shared\u2026',
+  'Finding the right words\u2026',
+  'Shaping the verses\u2026',
+  'Almost there\u2026'
+];
+
+function startLoadingLines() {
+  var i = 0;
+  var lineEl = document.getElementById('loading-line');
+  lineEl.textContent = LOADING_LINES[0];
+  return setInterval(function() {
+    i = (i + 1) % LOADING_LINES.length;
+    lineEl.style.opacity = '0';
+    setTimeout(function() {
+      lineEl.textContent = LOADING_LINES[i];
+      lineEl.style.opacity = '1';
+    }, 300);
+  }, 2800);
+}
+
+/* ── GENERATE SONG ── */
+async function generateSong() {
+  go('s-loading');
+  var loadingInterval = startLoadingLines();
+
+  var qb = currentQB;
+  var answersBlock = '';
+  for (var i = 0; i < 6; i++) {
+    answersBlock += '- ' + qb[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
+  }
+
+  var prompt = 'You are an expert songwriter. Create a deeply personal, emotionally resonant song. Return ONLY valid JSON \u2014 no markdown, no explanation, nothing else.\n\nTOPIC: ' + S.topic + '\nNAME (use naturally in lyrics, minimum twice): ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nANSWERS:\n' + answersBlock + '\nReturn this exact JSON:\n{\n  "title": "evocative song title \u2014 not generic",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Use ' + S.name + ' naturally in lyrics at least twice\n- Pull specific details from the interview answers \u2014 specificity is everything\n- Match lyric rhythm and structure to the genre\n- Bridge = a turning point or revelation\n- Outro = resolution or a lingering feeling\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+
+  try {
+    var res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+
+    var data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    var raw = data.content.map(function(item) { return item.text || ''; }).join('');
+    songResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    clearInterval(loadingInterval);
+    renderResult();
+    go('s-result');
+  } catch (err) {
+    clearInterval(loadingInterval);
+    document.getElementById('loading-line').textContent = 'Something went wrong. Tap back and try again.';
+    document.getElementById('back-btn').style.display = 'block';
+  }
+}
+
+/* ── RENDER RESULT ── */
+function renderResult() {
+  document.getElementById('r-title').textContent = songResult.title;
+  document.getElementById('r-meta').textContent = S.genre + ' \u00B7 For ' + S.name;
+
+  var lyricsEl = document.getElementById('r-lyrics');
+  lyricsEl.textContent = '';
+  songResult.sections.forEach(function(sec) {
+    var div = el('div', 'lyrics-section');
+    var label = el('div', 'lyrics-label', '[' + sec.label + ']');
+    div.appendChild(label);
+    sec.lines.forEach(function(line) {
+      var lineEl = el('div', 'lyrics-line', line);
+      div.appendChild(lineEl);
+    });
+    lyricsEl.appendChild(div);
+  });
+
+  var tagsEl = document.getElementById('r-tags');
+  tagsEl.textContent = '';
+  (songResult.styleTags || []).forEach(function(tag) {
+    var span = el('span', 'style-tag', tag);
+    tagsEl.appendChild(span);
+  });
+
+  document.getElementById('r-suno-prompt').textContent = songResult.sunoPrompt || '';
+}
+
+/* ── COPY ── */
+function copyText(what, btn) {
+  var text = '';
+  if (what === 'lyrics') {
+    text = songResult.sections.map(function(s) {
+      return '[' + s.label + ']\n' + s.lines.join('\n');
+    }).join('\n\n');
+  } else if (what === 'prompt') {
+    text = (songResult.styleTags || []).join(', ') + '\n' + (songResult.sunoPrompt || '');
+  } else {
+    var lyrics = songResult.sections.map(function(s) {
+      return '[' + s.label + ']\n' + s.lines.join('\n');
+    }).join('\n\n');
+    text = 'TITLE: ' + songResult.title + '\n\nLYRICS:\n' + lyrics + '\n\nSTYLE PROMPT:\n' + (songResult.styleTags || []).join(', ') + '\n' + (songResult.sunoPrompt || '');
+  }
+
+  navigator.clipboard.writeText(text).then(function() {
+    btn.classList.add('copied');
+    var orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.textContent = orig;
+    }, 1500);
+  });
+}
+
+/* ── RESET ── */
+function resetApp() {
+  S.topic = ''; S.name = ''; S.genre = ''; S.feeling = ''; S.answers = {};
+  qIdx = 0; currentQB = null; songResult = null;
+  document.getElementById('name-input').value = '';
+  document.getElementById('topic-custom').value = '';
+
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active', 'anim-in', 'anim-out');
+  });
+
+  document.getElementById('s-intro').classList.add('active');
+  screenHist = ['s-intro'];
+  updateChrome();
+}
+
+/* ── BOOT ── */
+init();
+updateChrome();
+</script>
+</body>
+</html>
