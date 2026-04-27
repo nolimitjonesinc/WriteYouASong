@@ -116,6 +116,12 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
 .ghost-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;cursor:pointer;width:100%;margin-top:6px;transition:border-color .15s}
 .ghost-btn:active{border-color:var(--border-active);color:var(--text)}
 
+/* ── EDITABLE LYRICS ── */
+.lyrics-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.lyrics-edit-btn{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.lyrics-edit-btn:hover{color:var(--gold)}
+.lyrics-textarea{width:100%;background:var(--surface2);border:1px solid var(--border-active);border-radius:var(--radius-sm);padding:14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;line-height:1.7;font-weight:300;outline:none;min-height:300px;resize:vertical}
+
 /* ── ANIMATIONS ── */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeOutUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-18px)}}
@@ -194,6 +200,18 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
   </div>
 </div>
 
+<!-- SCREEN 9: REFINE -->
+<div class="screen" id="s-refine">
+  <div class="screen-inner">
+    <div class="eyebrow">REFINE YOUR SONG</div>
+    <h2 class="section-title">What would make it better?</h2>
+    <div class="chip-list" id="refine-chips"></div>
+    <div class="custom-row">
+      <input type="text" id="refine-custom" placeholder="&#9998; Describe what you want changed&hellip;" onkeydown="if(event.key==='Enter'&&this.value.trim()){refineWithNote(this.value.trim())}">
+    </div>
+  </div>
+</div>
+
 <!-- SCREEN 7: LOADING -->
 <div class="screen" id="s-loading">
   <div class="screen-inner">
@@ -211,8 +229,12 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
     <p class="result-meta" id="r-meta"></p>
 
     <div class="result-card">
-      <div class="result-card-title">LYRICS</div>
+      <div class="lyrics-card-header">
+        <div class="result-card-title" style="margin-bottom:0">LYRICS</div>
+        <button class="lyrics-edit-btn" id="edit-toggle" onclick="toggleLyricsEdit()">Edit</button>
+      </div>
       <div id="r-lyrics"></div>
+      <textarea class="lyrics-textarea" id="lyrics-textarea" style="display:none"></textarea>
     </div>
     <button class="copy-btn" onclick="copyText('lyrics', this)">Copy Lyrics</button>
 
@@ -235,7 +257,9 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
     </div>
 
     <button class="copy-btn copy-primary" onclick="copyText('all', this)">Copy Everything</button>
-    <button class="ghost-btn" onclick="resetApp()">Make another song</button>
+    <button class="ghost-btn" onclick="go('s-refine')">Refine this song</button>
+    <button class="ghost-btn" onclick="generateSong()">Try Again</button>
+    <button class="ghost-btn" style="color:var(--muted);margin-top:4px" onclick="resetApp()">Make another song</button>
   </div>
 </div>
 
@@ -434,7 +458,7 @@ function updateChrome() {
   var hideBack = ['s-intro', 's-loading', 's-result'];
   back.style.display = hideBack.indexOf(id) !== -1 ? 'none' : 'block';
 
-  var hideProgress = ['s-intro', 's-loading', 's-result'];
+  var hideProgress = ['s-intro', 's-loading', 's-result', 's-refine'];
   if (hideProgress.indexOf(id) !== -1) {
     bar.style.width = '0';
     return;
@@ -594,19 +618,23 @@ function renderResult() {
 }
 
 /* ── COPY ── */
+function getLyricText() {
+  if (songResult._editedLyrics) return songResult._editedLyrics;
+  var ta = document.getElementById('lyrics-textarea');
+  if (ta && ta.style.display !== 'none') return ta.value;
+  return songResult.sections.map(function(s) {
+    return '[' + s.label + ']\n' + s.lines.join('\n');
+  }).join('\n\n');
+}
+
 function copyText(what, btn) {
   var text = '';
   if (what === 'lyrics') {
-    text = songResult.sections.map(function(s) {
-      return '[' + s.label + ']\n' + s.lines.join('\n');
-    }).join('\n\n');
+    text = getLyricText();
   } else if (what === 'prompt') {
     text = (songResult.styleTags || []).join(', ') + '\n' + (songResult.sunoPrompt || '');
   } else {
-    var lyrics = songResult.sections.map(function(s) {
-      return '[' + s.label + ']\n' + s.lines.join('\n');
-    }).join('\n\n');
-    text = 'TITLE: ' + songResult.title + '\n\nLYRICS:\n' + lyrics + '\n\nSTYLE PROMPT:\n' + (songResult.styleTags || []).join(', ') + '\n' + (songResult.sunoPrompt || '');
+    text = 'TITLE: ' + songResult.title + '\n\nLYRICS:\n' + getLyricText() + '\n\nSTYLE PROMPT:\n' + (songResult.styleTags || []).join(', ') + '\n' + (songResult.sunoPrompt || '');
   }
 
   navigator.clipboard.writeText(text).then(function() {
@@ -626,6 +654,7 @@ function resetApp() {
   qIdx = 0; currentQB = null; songResult = null;
   document.getElementById('name-input').value = '';
   document.getElementById('topic-custom').value = '';
+  resetLyricsEdit();
 
   document.querySelectorAll('.screen').forEach(function(s) {
     s.classList.remove('active', 'anim-in', 'anim-out');
@@ -636,7 +665,111 @@ function resetApp() {
   updateChrome();
 }
 
+/* ── REFINE CHIPS ── */
+var REFINE_OPTS = [
+  'Make it more emotional',
+  'Add more specific personal moments',
+  'Lighter and funnier tone',
+  'Shorter and punchier',
+  'Make the chorus hit harder',
+  'Weave their name in more naturally'
+];
+
+function initRefineChips() {
+  var list = document.getElementById('refine-chips');
+  REFINE_OPTS.forEach(function(opt) {
+    var d = el('div', 'chip', opt);
+    d.onclick = function() { tapCard(d, function() { refineWithNote(opt); }); };
+    list.appendChild(d);
+  });
+}
+
+async function refineWithNote(note) {
+  document.getElementById('refine-custom').value = '';
+
+  var currentLyrics = '';
+  var ta = document.getElementById('lyrics-textarea');
+  if (ta && ta.style.display !== 'none') {
+    currentLyrics = ta.value;
+  } else {
+    currentLyrics = songResult.sections.map(function(s) {
+      return '[' + s.label + ']\n' + s.lines.join('\n');
+    }).join('\n\n');
+  }
+
+  go('s-loading');
+  var loadingInterval = startLoadingLines();
+
+  var qb = currentQB;
+  var answersBlock = '';
+  for (var i = 0; i < 6; i++) {
+    answersBlock += '- ' + qb[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
+  }
+
+  var prompt = 'You are an expert songwriter. Rewrite the song below with ONE specific change requested by the user. Return ONLY valid JSON \u2014 no markdown, no explanation.\n\nORIGINAL CONTEXT:\nTOPIC: ' + S.topic + '\nNAME: ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nINTERVIEW ANSWERS:\n' + answersBlock + '\nCURRENT LYRICS:\n' + currentLyrics + '\n\nUSER WANTS THIS CHANGE: ' + note + '\n\nReturn this exact JSON:\n{\n  "title": "keep or improve the title",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Make ONLY the requested change\n- Keep ' + S.name + ' naturally in lyrics at least twice\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+
+  try {
+    var res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    var raw = data.content.map(function(item) { return item.text || ''; }).join('');
+    songResult = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    clearInterval(loadingInterval);
+    resetLyricsEdit();
+    renderResult();
+    go('s-result');
+  } catch (err) {
+    clearInterval(loadingInterval);
+    document.getElementById('loading-line').textContent = 'Something went wrong. Tap back and try again.';
+    document.getElementById('back-btn').style.display = 'block';
+  }
+}
+
+/* ── EDIT LYRICS TOGGLE ── */
+function toggleLyricsEdit() {
+  var display = document.getElementById('r-lyrics');
+  var ta = document.getElementById('lyrics-textarea');
+  var btn = document.getElementById('edit-toggle');
+  var isEditing = ta.style.display !== 'none';
+
+  if (isEditing) {
+    // Save edits back into songResult for copy functions
+    songResult._editedLyrics = ta.value;
+    display.style.display = 'block';
+    ta.style.display = 'none';
+    btn.textContent = 'Edit';
+  } else {
+    var plain = songResult.sections.map(function(s) {
+      return '[' + s.label + ']\n' + s.lines.join('\n');
+    }).join('\n\n');
+    ta.value = plain;
+    display.style.display = 'none';
+    ta.style.display = 'block';
+    btn.textContent = 'Done';
+    ta.focus();
+  }
+}
+
+function resetLyricsEdit() {
+  var display = document.getElementById('r-lyrics');
+  var ta = document.getElementById('lyrics-textarea');
+  var btn = document.getElementById('edit-toggle');
+  display.style.display = 'block';
+  ta.style.display = 'none';
+  ta.value = '';
+  btn.textContent = 'Edit';
+  if (songResult) delete songResult._editedLyrics;
+}
+
 /* ── BOOT ── */
+initRefineChips();
 init();
 updateChrome();
 </script>
