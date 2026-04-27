@@ -582,6 +582,7 @@ async function generateSong() {
     clearInterval(loadingInterval);
     renderResult();
     go('s-result');
+    document.getElementById('s-result').scrollTop = 0;
   } catch (err) {
     clearInterval(loadingInterval);
     document.getElementById('loading-line').textContent = 'Something went wrong. Tap back and try again.';
@@ -725,6 +726,7 @@ async function refineWithNote(note) {
     resetLyricsEdit();
     renderResult();
     go('s-result');
+    document.getElementById('s-result').scrollTop = 0;
   } catch (err) {
     clearInterval(loadingInterval);
     document.getElementById('loading-line').textContent = 'Something went wrong. Tap back and try again.';
