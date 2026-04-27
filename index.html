@@ -239,11 +239,13 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
     <button class="copy-btn" onclick="copyText('lyrics', this)">Copy Lyrics</button>
 
     <div class="result-card" style="margin-top:8px">
-      <div class="result-card-title">SUNO STYLE PROMPT</div>
+      <div class="lyrics-card-header">
+        <div class="result-card-title" style="margin-bottom:0">SUNO STYLE PROMPT</div>
+        <button class="lyrics-edit-btn" onclick="copyText('prompt', this)">Copy</button>
+      </div>
       <div class="style-tags" id="r-tags"></div>
       <p class="suno-prompt-text" id="r-suno-prompt"></p>
     </div>
-    <button class="copy-btn" onclick="copyText('prompt', this)">Copy Prompt</button>
 
     <div class="result-card" style="margin-top:8px">
       <div class="result-card-title">HOW TO USE SUNO</div>
