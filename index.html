@@ -116,6 +116,14 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
 .ghost-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:14px;font-weight:400;cursor:pointer;width:100%;margin-top:6px;transition:border-color .15s}
 .ghost-btn:active{border-color:var(--border-active);color:var(--text)}
 
+/* ── PROMPT REVIEW ── */
+#s-prompt-review{overflow-y:auto;justify-content:flex-start;padding-top:60px;padding-bottom:80px}
+.prompt-hint{font-size:13px;color:var(--muted2);line-height:1.6;margin-bottom:16px;text-align:left;align-self:stretch}
+.prompt-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:13px;line-height:1.7;font-weight:300;outline:none;min-height:280px;resize:vertical;margin-bottom:16px;transition:border-color .2s,color .2s}
+.prompt-textarea:focus{color:var(--text);border-color:var(--border-active)}
+.send-btn{width:100%;background:var(--gold);color:var(--bg);border:none;border-radius:var(--radius-sm);padding:18px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:10px;-webkit-tap-highlight-color:transparent;transition:opacity .15s}
+.send-btn:active{opacity:.88}
+
 /* ── EDITABLE LYRICS ── */
 .lyrics-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .lyrics-edit-btn{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
@@ -197,6 +205,18 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
     <div class="custom-row">
       <input type="text" id="q-custom" placeholder="&#9998; Write your own answer&hellip;" onkeydown="if(event.key==='Enter'&&this.value.trim()){pickAnswer(this.value.trim());this.value=''}">
     </div>
+  </div>
+</div>
+
+<!-- SCREEN 10: PROMPT REVIEW -->
+<div class="screen" id="s-prompt-review">
+  <div class="screen-inner" style="align-items:stretch">
+    <div class="eyebrow">YOUR SONGWRITER BRIEF</div>
+    <h2 class="section-title" style="text-align:left;margin-bottom:10px">Edit anything before we write.</h2>
+    <p class="prompt-hint">This is the exact brief your AI songwriter receives. Add details, fix anything, make it yours &mdash; then hit the button.</p>
+    <textarea class="prompt-textarea" id="prompt-textarea"></textarea>
+    <button class="send-btn" onclick="sendPrompt()">&diams; Write my song</button>
+    <button class="ghost-btn" onclick="goBack()">Go back</button>
   </div>
 </div>
 
@@ -466,6 +486,11 @@ function updateChrome() {
     return;
   }
 
+  if (id === 's-prompt-review') {
+    bar.style.width = '100%';
+    return;
+  }
+
   var flow = ['s-topic', 's-name', 's-genre', 's-feeling', 's-q'];
   var idx = flow.indexOf(id);
   if (idx === -1) return;
@@ -528,7 +553,7 @@ function pickAnswer(ans) {
     renderQuestion();
     updateChrome();
   } else {
-    generateSong();
+    showPromptReview();
   }
 }
 
@@ -554,18 +579,34 @@ function startLoadingLines() {
   }, 2800);
 }
 
-/* ── GENERATE SONG ── */
-async function generateSong() {
-  go('s-loading');
-  var loadingInterval = startLoadingLines();
-
+/* ── BUILD PROMPT ── */
+function buildPrompt() {
   var qb = currentQB;
   var answersBlock = '';
   for (var i = 0; i < 6; i++) {
     answersBlock += '- ' + qb[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
   }
+  return 'You are an expert songwriter. Create a deeply personal, emotionally resonant song. Return ONLY valid JSON \u2014 no markdown, no explanation, nothing else.\n\nTOPIC: ' + S.topic + '\nNAME (use naturally in lyrics, minimum twice): ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nANSWERS:\n' + answersBlock + '\nReturn this exact JSON:\n{\n  "title": "evocative song title \u2014 not generic",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Use ' + S.name + ' naturally in lyrics at least twice\n- Pull specific details from the interview answers \u2014 specificity is everything\n- Match lyric rhythm and structure to the genre\n- Bridge = a turning point or revelation\n- Outro = resolution or a lingering feeling\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+}
 
-  var prompt = 'You are an expert songwriter. Create a deeply personal, emotionally resonant song. Return ONLY valid JSON \u2014 no markdown, no explanation, nothing else.\n\nTOPIC: ' + S.topic + '\nNAME (use naturally in lyrics, minimum twice): ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nANSWERS:\n' + answersBlock + '\nReturn this exact JSON:\n{\n  "title": "evocative song title \u2014 not generic",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Use ' + S.name + ' naturally in lyrics at least twice\n- Pull specific details from the interview answers \u2014 specificity is everything\n- Match lyric rhythm and structure to the genre\n- Bridge = a turning point or revelation\n- Outro = resolution or a lingering feeling\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+function showPromptReview() {
+  document.getElementById('prompt-textarea').value = buildPrompt();
+  go('s-prompt-review');
+  setTimeout(function() { document.getElementById('s-prompt-review').scrollTop = 0; }, 250);
+}
+
+function sendPrompt() {
+  var prompt = document.getElementById('prompt-textarea').value.trim();
+  if (!prompt) return;
+  generateSong(prompt);
+}
+
+/* ── GENERATE SONG ── */
+async function generateSong(customPrompt) {
+  go('s-loading');
+  var loadingInterval = startLoadingLines();
+
+  var prompt = customPrompt || buildPrompt();
 
   try {
     var res = await fetch('/api/generate', {
