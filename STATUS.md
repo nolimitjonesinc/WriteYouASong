@@ -1,5 +1,5 @@
 # WriteYouASong — Status
-_Auto-updated by Status Brain on every push. Last change: Add Status Brain workflow for automated project status generation._
+_Auto-updated by Status Brain on every push. Last change: Add "a moment we shared" songs, style best-fits, and talk-it-through voice interview._
 
 **Status:** Live  
 **What it is:** A web app that generates custom songs based on user input, powered by Claude AI for lyrics and Suno for music generation.  
@@ -15,17 +15,21 @@ _Auto-updated by Status Brain on every push. Last change: Add Status Brain workf
 - Editable lyrics directly on result screen
 - Copy button in prompt card header (Suno-style UI)
 - Auto-scroll to top after regenerate or refine actions
+- "A moment we shared" song template
+- Style best-fit recommendations
+- Talk-it-through voice interview mode
+- Gold-accent visual polish and custom logo
 - Deployed and live on Vercel
 
 ## Recent changes (newest first)
-- 2026-07-20 — Added Status Brain workflow for automated status file generation
-- 2026-07-20 — Added Status Brain script (`status-brain.mjs`)
-- 2026-04-26 — Switched song generation model from Haiku to Claude Sonnet 4.6
-- 2026-04-26 — Added editable prompt review screen before song generation
-- 2026-04-26 — Moved copy button inside Suno-style prompt card header
-- 2026-04-26 — Auto-scroll result screen to top after regenerate or refine
-- 2026-04-26 — Added Try Again, Refine, and editable lyrics to result screen
-- 2026-04-25 — Initial build: full WriteYouASong app with core functionality
+- 2026-09-27 — Add "a moment we shared" songs, style best-fits, and talk-it-through voice interview
+- 2026-09-27 — Design exploration: gold-accent visual polish, logo, twemoji
+- 2026-07-20 — Harden Status Brain: retry-with-rebase on push
+- 2026-07-20 — Add Status Brain workflow and script for automated status generation
+- 2026-04-26 — Switch song generation from Haiku to Sonnet 4.6
+- 2026-04-26 — Add editable prompt review screen before song generation
+- 2026-04-26 — Move copy button inside Suno style prompt card header
+- 2026-04-26 — Add Try Again, Refine, and editable lyrics to result screen
 
 ## Reusable parts (for other projects)
 - **Status Brain automation** — Auto-generates project status file on every push via GitHub Actions — `.github/workflows/status-brain.yml` and `status-brain.mjs`
@@ -35,6 +39,8 @@ _Auto-updated by Status Brain on every push. Last change: Add Status Brain workf
 - No README documenting how to run or deploy locally
 - Error handling and edge cases not documented
 - Suno API integration status and music generation flow unclear from available code
+- Voice interview feature implementation details unclear
+- Style best-fit logic and algorithm not visible in provided code
 - No user authentication or rate limiting implemented
 - No analytics or usage tracking
 - Missing documentation on API keys and environment variable setup
