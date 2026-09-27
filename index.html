@@ -603,7 +603,10 @@ function init() {
     textWrap.appendChild(el('p', null, m[3]));
     d.appendChild(el('div', 'feeling-dot'));
     d.appendChild(textWrap);
-    d.onclick = function() { tapCard(d, function() { pickMode(m[0]); }); };
+    d.onclick = function() {
+      if (m[0] === 'talk') unlockAudio();
+      tapCard(d, function() { pickMode(m[0]); });
+    };
     ml.appendChild(d);
   });
 
@@ -1075,7 +1078,21 @@ var SILENCE_SEND_MS = 5000;    // auto-send after this much quiet (Embers' ready
 var MAX_TURNS = 10;
 
 var talk = { active: false, listening: false, busy: false, ready: false, voiceOn: true, userTurns: 0,
-  rec: null, committed: '', session: '', nudgeT: null, sendT: null, restarts: [], voice: null };
+  rec: null, committed: '', session: '', nudgeT: null, sendT: null, restarts: [], voice: null,
+  audio: null, gemini: true, speakId: 0 };
+
+/* iPhone only lets audio play after a tap, so every tap that could lead to the
+   songwriter speaking primes one reusable audio player with a silent clip. */
+var SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+function unlockAudio() {
+  if (!talk.audio) talk.audio = new Audio();
+  if (talk.audio.paused) {
+    talk.audio.src = SILENT_WAV;
+    var pr = talk.audio.play();
+    if (pr && pr.catch) pr.catch(function() {});
+  }
+  if (window.speechSynthesis && !speechSynthesis.speaking) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+}
 
 function talkSystemPrompt() {
   return 'You are a warm, curious songwriter interviewing someone out loud so you can write them a deeply personal song.\n\n' +
@@ -1117,11 +1134,51 @@ function pickVoice() {
 }
 if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function() { talk.voice = pickVoice(); };
 
-/* Speak, then hand the mic back. Safari sometimes never fires onend, so a timer backs it up. */
+/* Speak with RoadLore's Gemini voice, then hand the mic back. Falls back to the
+   browser's built-in voice if Gemini isn't set up or fails. */
 function speak(text, then) {
+  var id = ++talk.speakId;
   var done = false;
-  function finish() { if (done) return; done = true; if (talk.active && then) then(); }
-  if (!talk.voiceOn || !window.speechSynthesis) { finish(); return; }
+  function finish() {
+    if (done || id !== talk.speakId) return;
+    done = true;
+    if (talk.active && then) then();
+  }
+  stopSpeaking();
+  talk.speakId = id;
+  if (!talk.voiceOn) { finish(); return; }
+  setTalkState('speaking', 'Your songwriter');
+
+  if (!talk.gemini) { speakBrowser(text, finish); return; }
+  fetch('/api/voice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text })
+  }).then(function(res) {
+    var ct = res.headers.get('content-type') || '';
+    if (!res.ok || ct.indexOf('audio') === -1) {
+      if (res.status === 503) talk.gemini = false; // not configured — stop asking
+      throw new Error('voice');
+    }
+    return res.blob();
+  }).then(function(blob) {
+    if (id !== talk.speakId || !talk.active) return;
+    if (!talk.audio) talk.audio = new Audio();
+    var a = talk.audio;
+    if (a._url) URL.revokeObjectURL(a._url);
+    a._url = URL.createObjectURL(blob);
+    a.onended = function() { setTimeout(finish, 400); };
+    a.onerror = function() { speakBrowser(text, finish); };
+    a.src = a._url;
+    var pr = a.play();
+    if (pr && pr.catch) pr.catch(function() { speakBrowser(text, finish); });
+  }).catch(function() {
+    if (id === talk.speakId && talk.active) speakBrowser(text, finish);
+  });
+}
+
+function speakBrowser(text, finish) {
+  if (!window.speechSynthesis) { finish(); return; }
   speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
   if (!talk.voice) talk.voice = pickVoice();
@@ -1129,9 +1186,15 @@ function speak(text, then) {
   u.rate = 0.98;
   u.onend = function() { setTimeout(finish, 600); };
   u.onerror = finish;
-  setTalkState('speaking', 'Your songwriter');
   speechSynthesis.speak(u);
+  // Safari sometimes never fires onend
   setTimeout(finish, text.split(/\s+/).length * 450 + 2500);
+}
+
+function stopSpeaking() {
+  talk.speakId++;
+  if (talk.audio) { try { talk.audio.pause(); } catch (err) {} }
+  if (window.speechSynthesis) speechSynthesis.cancel();
 }
 
 function askAloud(text) {
@@ -1159,12 +1222,12 @@ function startTalk() {
 function stopTalk() {
   talk.active = false;
   stopListening();
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  stopSpeaking();
 }
 
 function startListening() {
   if (!SR || talk.listening || talk.busy || !talk.active) return;
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  stopSpeaking();
   talk.committed = ''; talk.session = ''; talk.restarts = [];
   talk.listening = true;
   document.getElementById('talk-heard').textContent = '';
@@ -1229,17 +1292,19 @@ function submitSpoken() {
 }
 
 function toggleMic() {
+  unlockAudio();
   if (!SR) { document.getElementById('talk-custom').focus(); return; }
   if (talk.listening) submitSpoken(); else startListening();
 }
 
 function toggleVoice() {
   talk.voiceOn = !talk.voiceOn;
-  if (!talk.voiceOn && window.speechSynthesis) speechSynthesis.cancel();
+  if (!talk.voiceOn) stopSpeaking(); else unlockAudio();
   document.getElementById('voice-toggle').textContent = talk.voiceOn ? '🔊 Voice on' : '🔇 Voice off';
 }
 
 function sendTyped() {
+  unlockAudio();
   var input = document.getElementById('talk-custom');
   var text = input.value.trim();
   if (!text || talk.busy) return;
