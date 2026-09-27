@@ -1,9 +1,9 @@
 # WriteYouASong — Status
-_Auto-updated by Status Brain on every push. Last change: Add "a moment we shared" songs, style best-fits, and talk-it-through voice interview._
+_Auto-updated by Status Brain on every push. Last change: Talk-it-through voice: use RoadLore's Gemini TTS voice (Aoede)._
 
 **Status:** Live  
 **What it is:** A web app that generates custom songs based on user input, powered by Claude AI for lyrics and Suno for music generation.  
-**Stack:** HTML/JavaScript frontend, Node.js backend (Vercel serverless), Claude Sonnet 4.6 API, Suno API.
+**Stack:** HTML/JavaScript frontend, Node.js backend (Vercel serverless), Claude Sonnet 4.6 API, Suno API, Gemini TTS for voice.
 
 ## What works right now
 - User enters song details (topic, style, mood, etc.) via web form
@@ -17,11 +17,12 @@ _Auto-updated by Status Brain on every push. Last change: Add "a moment we share
 - Auto-scroll to top after regenerate or refine actions
 - "A moment we shared" song template
 - Style best-fit recommendations
-- Talk-it-through voice interview mode
+- Talk-it-through voice interview mode with Gemini TTS voice (Aoede)
 - Gold-accent visual polish and custom logo
 - Deployed and live on Vercel
 
 ## Recent changes (newest first)
+- 2026-09-27 — Talk-it-through voice: use RoadLore's Gemini TTS voice (Aoede)
 - 2026-09-27 — Add "a moment we shared" songs, style best-fits, and talk-it-through voice interview
 - 2026-09-27 — Design exploration: gold-accent visual polish, logo, twemoji
 - 2026-07-20 — Harden Status Brain: retry-with-rebase on push
@@ -29,7 +30,6 @@ _Auto-updated by Status Brain on every push. Last change: Add "a moment we share
 - 2026-04-26 — Switch song generation from Haiku to Sonnet 4.6
 - 2026-04-26 — Add editable prompt review screen before song generation
 - 2026-04-26 — Move copy button inside Suno style prompt card header
-- 2026-04-26 — Add Try Again, Refine, and editable lyrics to result screen
 
 ## Reusable parts (for other projects)
 - **Status Brain automation** — Auto-generates project status file on every push via GitHub Actions — `.github/workflows/status-brain.yml` and `status-brain.mjs`
@@ -44,3 +44,4 @@ _Auto-updated by Status Brain on every push. Last change: Add "a moment we share
 - No user authentication or rate limiting implemented
 - No analytics or usage tracking
 - Missing documentation on API keys and environment variable setup
+- TTS voice integration testing and reliability unclear
