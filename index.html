@@ -145,6 +145,35 @@ h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:300}
 .anim-in{animation:fadeInUp .38s ease forwards}
 .anim-out{animation:fadeOutUp .22s ease forwards}
 
+/* ── TOPIC MODE TOGGLE ── */
+.seg{display:flex;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px;margin-bottom:18px}
+.seg button{flex:1;background:none;border:none;border-radius:999px;padding:10px 12px;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s}
+.seg button.on{background:var(--gold);color:var(--bg)}
+
+/* ── GENRE FITS ── */
+.genre-hint{font-size:12px;color:var(--gold);margin:-14px 0 14px;text-align:center;min-height:16px}
+.card.fit{border-color:var(--border-active);background:linear-gradient(180deg,var(--gold-soft),var(--surface))}
+.card-vibe{display:block;font-size:11px;color:var(--gold);margin-top:4px;line-height:1.3}
+
+/* ── TALK IT THROUGH (voice interview) ── */
+#s-talk{overflow-y:auto}
+.talk-orb{width:84px;height:84px;border-radius:50%;margin:0 auto 22px;background:radial-gradient(circle at 40% 35%,#E8D3A8,var(--gold) 55%,#7A6238);flex-shrink:0}
+.talk-orb.listening{animation:orbPulse 1.4s ease-out infinite}
+.talk-orb.speaking{animation:orbBreath 1.8s ease-in-out infinite}
+.talk-orb.thinking{opacity:.55;animation:orbBreath 1s ease-in-out infinite}
+@keyframes orbPulse{0%{box-shadow:0 0 0 0 rgba(201,169,110,.45)}100%{box-shadow:0 0 0 24px rgba(201,169,110,0)}}
+@keyframes orbBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.talk-status{font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:12px;min-height:14px}
+.talk-q{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,5vw,27px);font-weight:400;text-align:center;line-height:1.3;margin-bottom:14px}
+.talk-heard{font-size:14px;color:var(--muted2);text-align:center;font-style:italic;min-height:22px;margin-bottom:16px;width:100%}
+.talk-actions{display:flex;gap:10px;width:100%;margin-bottom:10px}
+.mic-btn{flex:1;background:none;border:1px solid var(--gold);color:var(--gold);border-radius:var(--radius-sm);padding:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mic-btn.on{background:var(--gold);color:var(--bg)}
+.voice-toggle{background:none;border:1px solid var(--border);color:var(--muted2);border-radius:var(--radius-sm);padding:14px 16px;font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer}
+.send-arrow{background:var(--gold);color:var(--bg);border:none;border-radius:var(--radius-sm);width:48px;height:48px;font-size:18px;cursor:pointer;flex-shrink:0}
+.talk-done{margin-top:14px;opacity:.4;pointer-events:none;transition:opacity .2s}
+.talk-done.ready{opacity:1;pointer-events:auto}
+
 /* ── EMOJI FIXES ── */
 img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
 .card-emoji img.emoji{height:1.5em;width:1.5em;display:inline}
@@ -175,7 +204,11 @@ img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
 <div class="screen" id="s-topic">
   <div class="screen-inner">
     <div class="eyebrow">STEP 1</div>
-    <h2 class="section-title">Who is this song for?</h2>
+    <h2 class="section-title" id="topic-title">Who is this song for?</h2>
+    <div class="seg" role="tablist">
+      <button type="button" id="seg-person" class="on" onclick="setTopicMode('person')">A person</button>
+      <button type="button" id="seg-moment" onclick="setTopicMode('moment')">A moment we shared</button>
+    </div>
     <div class="card-grid" id="topic-grid"></div>
     <div class="custom-row">
       <input type="text" id="topic-custom" placeholder="Something else — type and press Enter&hellip;" onkeydown="if(event.key==='Enter'&&this.value.trim()){pickTopic(this.value.trim())}">
@@ -187,8 +220,8 @@ img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
 <div class="screen" id="s-name">
   <div class="screen-inner">
     <div class="eyebrow">STEP 2</div>
-    <h2 class="section-title">What's their name?</h2>
-    <label class="name-label">THEIR NAME</label>
+    <h2 class="section-title" id="name-title">What's their name?</h2>
+    <label class="name-label" id="name-label">THEIR NAME</label>
     <input class="name-input" type="text" id="name-input" placeholder="e.g. Marco, Mom, Hurricane Maisie&hellip;" onkeydown="if(event.key==='Enter')submitName()">
     <button class="cta name-continue" onclick="submitName()">Continue</button>
   </div>
@@ -199,6 +232,7 @@ img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
   <div class="screen-inner">
     <div class="eyebrow">STEP 3</div>
     <h2 class="section-title">What kind of song?</h2>
+    <p class="genre-hint" id="genre-hint"></p>
     <div class="genre-grid" id="genre-grid"></div>
   </div>
 </div>
@@ -209,6 +243,34 @@ img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
     <div class="eyebrow">STEP 4</div>
     <h2 class="section-title">When they hear this &mdash; what hits them?</h2>
     <div class="feeling-list" id="feeling-list"></div>
+  </div>
+</div>
+
+<!-- SCREEN 5b: HOW TO TELL IT -->
+<div class="screen" id="s-mode">
+  <div class="screen-inner">
+    <div class="eyebrow">STEP 5</div>
+    <h2 class="section-title">How do you want to tell it?</h2>
+    <div class="feeling-list" id="mode-list"></div>
+  </div>
+</div>
+
+<!-- SCREEN 6b: TALK IT THROUGH -->
+<div class="screen" id="s-talk">
+  <div class="screen-inner">
+    <div class="talk-orb" id="talk-orb"></div>
+    <div class="talk-status" id="talk-status"></div>
+    <h2 class="talk-q" id="talk-q"></h2>
+    <p class="talk-heard" id="talk-heard"></p>
+    <div class="talk-actions">
+      <button type="button" class="mic-btn" id="mic-btn" onclick="toggleMic()">&#127908; Tap to talk</button>
+      <button type="button" class="voice-toggle" id="voice-toggle" onclick="toggleVoice()">&#128266; Voice on</button>
+    </div>
+    <div class="custom-row">
+      <input type="text" id="talk-custom" placeholder="&#9998; Or type your answer&hellip;" onkeydown="if(event.key==='Enter'){sendTyped()}">
+      <button type="button" class="send-arrow" onclick="sendTyped()" aria-label="Send">&rarr;</button>
+    </div>
+    <button class="send-btn talk-done" id="talk-done" onclick="finishTalk()">&diams; Write my song</button>
   </div>
 </div>
 
@@ -303,17 +365,40 @@ img.emoji{height:1em;width:1em;margin:0 .05em 0 .1em;vertical-align:-0.1em}
 
 <script>
 /* ── STATE ── */
-var S = { topic: '', name: '', genre: '', feeling: '', answers: {} };
+var S = { topic: '', topicKey: '', kind: 'person', name: '', genre: '', style: '', feeling: '', answers: {}, transcript: [] };
 var screenHist = ['s-intro'];
 var qIdx = 0;
 var currentQB = null;
 var songResult = null;
+
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 
 /* ── DATA ── */
 var TOPICS = [
   ['👫','A sibling'],['🧡','A parent'],['✨','A best friend'],['💛','A partner'],
   ['🌱','A child'],['🐾','A pet'],['🎓','A milestone'],['🕊️','A loss']
 ];
+
+var MOMENTS = [
+  ['🏖️','A trip or vacation'],['🎓','College days'],
+  ['📸','A favorite memory'],['🏡','A family tradition']
+];
+
+/* Style picks that tend to land for each kind of song: [genre, vibe fed to the songwriter] */
+var GENRE_FITS = {
+  sibling:   [['Folk / Indie','Warm, nostalgic acoustic'],['Country','Back-porch storytelling'],['Pop','Upbeat singalong']],
+  parent:    [['Country','Heartfelt storytelling ballad'],['Folk / Indie','Gentle and tender'],['R&B / Soul','Warm soul, gospel touch']],
+  friend:    [['Pop','Feel-good anthem'],['Rock','Windows-down anthem'],['Folk / Indie','Campfire singalong']],
+  partner:   [['R&B / Soul','Slow-dance intimate'],['Pop','Romantic ballad'],['Country','First-dance ballad']],
+  child:     [['Folk / Indie','Soft lullaby feel'],['Pop','Bright and playful'],['Cinematic','Big, tender, swelling']],
+  pet:       [['Country','Goofy, warm storytelling'],['Folk / Indie','Sweet acoustic'],['Pop','Bouncy and fun']],
+  milestone: [['Pop','Celebration anthem'],['Rock','Victory-lap energy'],['Cinematic','Epic and triumphant']],
+  loss:      [['Folk / Indie','Quiet, intimate acoustic'],['Cinematic','Piano and strings'],['R&B / Soul','Gospel-tinged, uplifting']],
+  trip:      [['Country','Road-trip singalong'],['Folk / Indie','Sun-soaked acoustic'],['Pop','Summer anthem']],
+  college:   [['Rock','Throwback pop-punk'],['Pop','Nostalgic party anthem'],['Hip Hop','Old-school storytelling']],
+  memory:    [['Folk / Indie','Warm and nostalgic'],['Cinematic','Sweeping and emotional'],['Country','Front-porch storytelling']],
+  tradition: [['Folk / Indie','Cozy, around-the-table'],['Country','Family singalong'],['Jazz','Warm vintage holiday']]
+};
 
 var GENRES = [
   ['🤠','Country'],['🌟','Pop'],['🎶','R&B / Soul'],
@@ -370,6 +455,38 @@ var QB = {
     { q:'What tone are you going for?', opts:['Joyful and celebratory','Tender and emotional','Playful and fun','Quiet and sincere'] },
     { q:'What do you most want them to know?', opts:['I loved you before I ever met you','Every single day with you is a gift','You can do anything \u2014 and I\'ll be right here','Nothing in this world matters more than you'] }
   ],
+  trip: [
+    { q:'Where did you go?', opts:['A beach somewhere warm','A road trip with too many stops','Camping \u2014 bugs and all','A big city we had no business navigating','Back to where the family\'s from'] },
+    { q:'Who was on this trip?', opts:['Just the immediate family','The whole extended crew','Me and my person','A group of friends','Three generations under one roof'] },
+    { q:'The moment everyone still brings up.', opts:['Something went hilariously wrong','We got lost and found something better','A view that shut everyone up','Someone did something legendary','A quiet night that felt perfect'] },
+    { q:'A small detail you can still picture.', opts:['The car playlist on repeat','A meal we still talk about','The place we stayed','A joke that was born there','How everyone looked that one evening'] },
+    { q:'What did that trip mean to all of you?', opts:['The last time we were all together','Proof we can survive each other','The first big trip we ever took','A break we really needed','It became a family legend'] },
+    { q:'What should this song leave everyone feeling?', opts:['Like we\'re right back there','Let\'s do it again \u2014 soon','Grateful we got that time','Laughing all over again'] }
+  ],
+  college: [
+    { q:'Where did this crew come together?', opts:['Freshman dorm \u2014 random roommate luck','A team, club or band','The house we all lived in','A class we all barely passed','A party no one fully remembers'] },
+    { q:'What was your group known for?', opts:['Always the loudest in the room','Terrible decisions, great stories','The 2 a.m. food runs','Showing up for each other, every time','Being inseparable'] },
+    { q:'The night that became a legend.', opts:['A road trip that went off the rails','Something that should\'ve gotten us kicked out','A game or show we\'ll never forget','A random Tuesday that turned into everything','Graduation night'] },
+    { q:'Something only this group would get.', opts:['A nickname that stuck forever','An inside joke older than some marriages','A song we played to death','A spot on campus that was ours'] },
+    { q:'Where is everyone now?', opts:['Scattered across the country','Still close \u2014 some of us literally','Married, kids, mortgages \u2014 still us','Some we\'ve lost along the way','Planning the next reunion'] },
+    { q:'What does the song need to say?', opts:['Those were the best years','Nothing has changed between us','You raised me as much as school did','Here\'s to the next chapter together'] }
+  ],
+  memory: [
+    { q:'When did this happen?', opts:['When I was a kid','A few years ago','Recently \u2014 it\'s still fresh','Long ago, but I remember every second'] },
+    { q:'Where were you?', opts:['At home','Somewhere outdoors','On the road','A place that isn\'t there anymore','Somewhere totally ordinary'] },
+    { q:'Who was with you?', opts:['Family','Friends','My person','Just the two of us','A room full of people I love'] },
+    { q:'What made it unforgettable?', opts:['Everything just felt right','We laughed until we couldn\'t breathe','It changed something in me','It was the last time things were like that','Nothing big happened \u2014 and it was perfect'] },
+    { q:'One detail you can still see, hear or smell.', opts:['A song playing in the background','The weather or the light','Something someone said','A smell that brings it all back'] },
+    { q:'Why does it matter now?', opts:['I want to hold onto it forever','It reminds me who we are','I want them to know it mattered to me too','I\'d give anything to relive it'] }
+  ],
+  tradition: [
+    { q:'What\'s the tradition?', opts:['A holiday we do our own way','An annual trip or getaway','A family recipe or meal','A game night or competition','A weird ritual only we\'d understand'] },
+    { q:'How long has it been going?', opts:['Generations','Since I was a kid','We started it ourselves','A few years \u2014 but it stuck'] },
+    { q:'Who makes it happen?', opts:['Mom or Dad runs the show','Grandma or Grandpa','Everyone pitches in','One person who refuses to let it die'] },
+    { q:'The year everyone still talks about.', opts:['The year everything went wrong','The year someone new joined','The year someone was missing','The year it was just perfect'] },
+    { q:'The small detail that makes it ours.', opts:['A dish nobody else makes right','A song we always play','An outfit, decoration or prop','A toast or saying that gets repeated'] },
+    { q:'What should this song hold onto?', opts:['This is who we are','Keep it going forever','For the ones who started it','Wherever we go, we come back to this'] }
+  ],
   default: [
     { q:'How long has this been part of your life?', opts:['My whole life','More than 10 years','5\u201310 years','A few years','Not long \u2014 but feels like forever'] },
     { q:'One word that captures it.', opts:['Unbreakable','Rare','Complicated','Easy','Everything'] },
@@ -381,14 +498,28 @@ var QB = {
 };
 
 /* ── QUESTION BANK ROUTING ── */
-function getQB(topic) {
+function getTopicKey(topic) {
   var t = topic.toLowerCase();
-  if (t.includes('sibling') || t.includes('brother') || t.includes('sister')) return QB.sibling;
-  if (t.includes('parent') || t.includes('mom') || t.includes('dad') || t.includes('mother') || t.includes('father')) return QB.parent;
-  if (t.includes('friend')) return QB.friend;
-  if (t.includes('partner') || t.includes('spouse') || t.includes('husband') || t.includes('wife')) return QB.partner;
-  if (t.includes('child') || t.includes('toddler') || t.includes('baby') || t.includes('kid') || t.includes('son') || t.includes('daughter')) return QB.child;
-  return QB.default;
+  // Moments first, so "college friends" or "trip with mom" land on the experience questions
+  if (/\b(trip|vacation|road ?trip|beach|travel|cruise|getaway|camping)\b/.test(t)) return 'trip';
+  if (/\b(college|university|dorm|campus|fraternity|sorority|frat)\b/.test(t)) return 'college';
+  if (/\b(tradition|thanksgiving|christmas|hanukkah|reunion)\b/.test(t)) return 'tradition';
+  if (/\b(memory|memories|remember)\b/.test(t)) return 'memory';
+  if (t.includes('sibling') || t.includes('brother') || t.includes('sister')) return 'sibling';
+  if (t.includes('parent') || t.includes('mom') || t.includes('dad') || t.includes('mother') || t.includes('father')) return 'parent';
+  if (t.includes('friend')) return 'friend';
+  if (t.includes('partner') || t.includes('spouse') || t.includes('husband') || t.includes('wife')) return 'partner';
+  if (t.includes('child') || t.includes('toddler') || t.includes('baby') || t.includes('kid') || t.includes('son') || t.includes('daughter')) return 'child';
+  if (/\b(pet|dog|cat|puppy|kitten)\b/.test(t)) return 'pet';
+  if (t.includes('milestone') || t.includes('graduat') || t.includes('retire')) return 'milestone';
+  if (t.includes('loss') || t.includes('passed') || t.includes('memorial') || t.includes('funeral')) return 'loss';
+  return 'default';
+}
+
+var MOMENT_KEYS = ['trip', 'college', 'memory', 'tradition'];
+
+function getQB(topic) {
+  return QB[getTopicKey(topic)] || QB.default;
 }
 
 /* ── SAFE DOM HELPERS ── */
@@ -400,27 +531,80 @@ function el(tag, cls, textContent) {
 }
 
 /* ── INIT RENDER ── */
-function init() {
+function makeCard(emojiTxt, labelTxt, vibeTxt) {
+  var d = el('div', vibeTxt ? 'card fit' : 'card');
+  d.appendChild(el('span', 'card-emoji', emojiTxt));
+  d.appendChild(el('span', 'card-label', labelTxt));
+  if (vibeTxt) d.appendChild(el('span', 'card-vibe', vibeTxt));
+  return d;
+}
+
+function parseEmoji(node) {
+  if (window.twemoji) twemoji.parse(node, { folder: 'svg', ext: '.svg' });
+}
+
+function renderTopics() {
   var tg = document.getElementById('topic-grid');
-  TOPICS.forEach(function(item) {
-    var d = el('div', 'card');
-    var emoji = el('span', 'card-emoji', item[0]);
-    var label = el('span', 'card-label', item[1]);
-    d.appendChild(emoji);
-    d.appendChild(label);
+  tg.textContent = '';
+  (S.kind === 'moment' ? MOMENTS : TOPICS).forEach(function(item) {
+    var d = makeCard(item[0], item[1]);
     d.onclick = function() { tapCard(d, function() { pickTopic(item[1]); }); };
     tg.appendChild(d);
   });
+  parseEmoji(tg);
+}
 
+function setTopicMode(kind) {
+  S.kind = kind;
+  document.getElementById('seg-person').classList.toggle('on', kind === 'person');
+  document.getElementById('seg-moment').classList.toggle('on', kind === 'moment');
+  document.getElementById('topic-title').textContent = kind === 'moment' ? 'What moment is this song about?' : 'Who is this song for?';
+  document.getElementById('topic-custom').placeholder = kind === 'moment'
+    ? 'Something else, e.g. \u201Cour Maui trip\u201D\u2026'
+    : 'Something else \u2014 type and press Enter\u2026';
+  renderTopics();
+}
+
+/* Best-fit genres float to the top row with a vibe line; the rest follow */
+function renderGenres() {
   var gg = document.getElementById('genre-grid');
-  GENRES.forEach(function(item) {
-    var d = el('div', 'card');
-    var emoji = el('span', 'card-emoji', item[0]);
-    var label = el('span', 'card-label', item[1]);
-    d.appendChild(emoji);
-    d.appendChild(label);
-    d.onclick = function() { tapCard(d, function() { pickGenre(item[1]); }); };
+  var hint = document.getElementById('genre-hint');
+  var fits = GENRE_FITS[S.topicKey] || [];
+  var fitNames = fits.map(function(f) { return f[0]; });
+  gg.textContent = '';
+  hint.textContent = fits.length ? '\u2726 Top row fits ' + S.topic.toLowerCase() + ' best' : '';
+
+  var ordered = fits.map(function(f) {
+    var g = GENRES.filter(function(x) { return x[1] === f[0]; })[0];
+    return [g[0], g[1], f[1]];
+  }).concat(GENRES.filter(function(g) { return fitNames.indexOf(g[1]) === -1; }));
+
+  ordered.forEach(function(item) {
+    var d = makeCard(item[0], item[1], item[2]);
+    d.onclick = function() { tapCard(d, function() { pickGenre(item[1], item[2] || ''); }); };
     gg.appendChild(d);
+  });
+  parseEmoji(gg);
+}
+
+function init() {
+  renderTopics();
+  renderGenres();
+
+  var ml = document.getElementById('mode-list');
+  [
+    ['talk', SR ? '\ud83c\udf99\ufe0f' : '\ud83d\udcac', SR ? 'Talk it through' : 'Chat it through',
+      SR ? 'A quick conversation. Just talk \u2014 your songwriter asks the follow-ups.' : 'A quick conversation. Type your answers \u2014 your songwriter asks the follow-ups.'],
+    ['tap', '\ud83d\udc46', 'Tap through 6 questions', 'Fastest. Pick answers or write your own.']
+  ].forEach(function(m) {
+    var d = el('div', 'feeling-card');
+    var textWrap = el('div', 'feeling-text');
+    textWrap.appendChild(el('h3', null, m[1] + ' ' + m[2]));
+    textWrap.appendChild(el('p', null, m[3]));
+    d.appendChild(el('div', 'feeling-dot'));
+    d.appendChild(textWrap);
+    d.onclick = function() { tapCard(d, function() { pickMode(m[0]); }); };
+    ml.appendChild(d);
   });
 
   var fl = document.getElementById('feeling-list');
@@ -475,6 +659,8 @@ function goBack() {
     return;
   }
 
+  if (currentId === 's-talk') stopTalk();
+
   var current = document.getElementById(currentId);
   screenHist.pop();
   var prevId = screenHist[screenHist.length - 1];
@@ -507,15 +693,17 @@ function updateChrome() {
     return;
   }
 
-  var flow = ['s-topic', 's-name', 's-genre', 's-feeling', 's-q'];
-  var idx = flow.indexOf(id);
+  var flow = ['s-topic', 's-name', 's-genre', 's-feeling', 's-mode', 's-q'];
+  var idx = flow.indexOf(id === 's-talk' ? 's-q' : id);
   if (idx === -1) return;
 
   var pct;
   if (id === 's-q') {
-    pct = ((4 + qIdx / 6) / 5) * 100;
+    pct = ((5 + qIdx / 6) / 6) * 100;
+  } else if (id === 's-talk') {
+    pct = ((5 + Math.min(talk.userTurns, 7) / 7) / 6) * 100;
   } else {
-    pct = (idx / 5) * 100;
+    pct = (idx / 6) * 100;
   }
   bar.style.width = Math.min(pct, 100) + '%';
 }
@@ -523,7 +711,16 @@ function updateChrome() {
 /* ── PICKERS ── */
 function pickTopic(label) {
   S.topic = label;
-  currentQB = getQB(label);
+  S.topicKey = getTopicKey(label);
+  // A typed topic like "our Maui trip" counts as a moment even from the person tab
+  var isMoment = MOMENT_KEYS.indexOf(S.topicKey) !== -1;
+  currentQB = QB[S.topicKey] || QB.default;
+  document.getElementById('name-title').textContent = isMoment ? 'Who is this song for?' : 'What\'s their name?';
+  document.getElementById('name-label').textContent = isMoment ? 'WHO IT\'S FOR' : 'THEIR NAME';
+  document.getElementById('name-input').placeholder = isMoment
+    ? 'e.g. The Jones family, the Delta house crew, Grandma\u2026'
+    : 'e.g. Marco, Mom, Hurricane Maisie\u2026';
+  renderGenres();
   go('s-name');
 }
 
@@ -534,13 +731,20 @@ function submitName() {
   go('s-genre');
 }
 
-function pickGenre(label) {
+function pickGenre(label, vibe) {
   S.genre = label;
+  S.style = vibe || '';
   go('s-feeling');
 }
 
 function pickFeeling(label) {
   S.feeling = label;
+  go('s-mode');
+}
+
+function pickMode(mode) {
+  S.transcript = [];
+  if (mode === 'talk') { startTalk(); return; }
   qIdx = 0;
   renderQuestion();
   go('s-q');
@@ -596,13 +800,33 @@ function startLoadingLines() {
 }
 
 /* ── BUILD PROMPT ── */
-function buildPrompt() {
-  var qb = currentQB;
-  var answersBlock = '';
-  for (var i = 0; i < 6; i++) {
-    answersBlock += '- ' + qb[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
+/* Tap-through answers, or the full talk-it-through conversation */
+function getAnswersBlock() {
+  var out = '';
+  if (S.transcript.length) {
+    S.transcript.forEach(function(t) {
+      out += (t.role === 'assistant' ? 'Songwriter: ' : 'Them: ') + t.text + '\n';
+    });
+    return out;
   }
-  return 'You are an expert songwriter. Create a deeply personal, emotionally resonant song. Return ONLY valid JSON \u2014 no markdown, no explanation, nothing else.\n\nTOPIC: ' + S.topic + '\nNAME (use naturally in lyrics, minimum twice): ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nANSWERS:\n' + answersBlock + '\nReturn this exact JSON:\n{\n  "title": "evocative song title \u2014 not generic",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Use ' + S.name + ' naturally in lyrics at least twice\n- Pull specific details from the interview answers \u2014 specificity is everything\n- Match lyric rhythm and structure to the genre\n- Bridge = a turning point or revelation\n- Outro = resolution or a lingering feeling\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+  for (var i = 0; i < 6; i++) {
+    out += '- ' + currentQB[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
+  }
+  return out;
+}
+
+function buildPrompt() {
+  var answersBlock = getAnswersBlock();
+  return 'You are an expert songwriter. Create a deeply personal, emotionally resonant song. Return ONLY valid JSON \u2014 no markdown, no explanation, nothing else.\n\nTOPIC: ' + S.topic + '\nNAME (use naturally in lyrics, minimum twice): ' + S.name + '\nGENRE: ' + S.genre + styleLine() + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nANSWERS:\n' + answersBlock + '\nReturn this exact JSON:\n{\n  "title": "evocative song title \u2014 not generic",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Use ' + S.name + ' naturally in lyrics at least twice\n- Pull specific details from the interview answers \u2014 specificity is everything\n- Match lyric rhythm and structure to the genre\n- Bridge = a turning point or revelation\n- Outro = resolution or a lingering feeling\n- No filler lines. No clich\u00e9s. Write like a real songwriter.' + momentRule();
+}
+
+function styleLine() {
+  return S.style ? '\nSTYLE DIRECTION: ' + S.style : '';
+}
+
+function momentRule() {
+  if (MOMENT_KEYS.indexOf(S.topicKey) === -1) return '';
+  return '\n- This song is about a shared experience. Tell the story of it and put the listener back inside the moment \u2014 places, sounds, who was there.';
 }
 
 function showPromptReview() {
@@ -710,7 +934,9 @@ function copyText(what, btn) {
 
 /* ── RESET ── */
 function resetApp() {
-  S.topic = ''; S.name = ''; S.genre = ''; S.feeling = ''; S.answers = {};
+  stopTalk();
+  S.topic = ''; S.topicKey = ''; S.name = ''; S.genre = ''; S.style = ''; S.feeling = ''; S.answers = {}; S.transcript = [];
+  setTopicMode('person');
   qIdx = 0; currentQB = null; songResult = null;
   document.getElementById('name-input').value = '';
   document.getElementById('topic-custom').value = '';
@@ -760,13 +986,9 @@ async function refineWithNote(note) {
   go('s-loading');
   var loadingInterval = startLoadingLines();
 
-  var qb = currentQB;
-  var answersBlock = '';
-  for (var i = 0; i < 6; i++) {
-    answersBlock += '- ' + qb[i].q + '\n  \u2192 ' + (S.answers['q' + (i + 1)] || '') + '\n';
-  }
+  var answersBlock = getAnswersBlock();
 
-  var prompt = 'You are an expert songwriter. Rewrite the song below with ONE specific change requested by the user. Return ONLY valid JSON \u2014 no markdown, no explanation.\n\nORIGINAL CONTEXT:\nTOPIC: ' + S.topic + '\nNAME: ' + S.name + '\nGENRE: ' + S.genre + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nINTERVIEW ANSWERS:\n' + answersBlock + '\nCURRENT LYRICS:\n' + currentLyrics + '\n\nUSER WANTS THIS CHANGE: ' + note + '\n\nReturn this exact JSON:\n{\n  "title": "keep or improve the title",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Make ONLY the requested change\n- Keep ' + S.name + ' naturally in lyrics at least twice\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
+  var prompt = 'You are an expert songwriter. Rewrite the song below with ONE specific change requested by the user. Return ONLY valid JSON \u2014 no markdown, no explanation.\n\nORIGINAL CONTEXT:\nTOPIC: ' + S.topic + '\nNAME: ' + S.name + '\nGENRE: ' + S.genre + styleLine() + '\nEMOTIONAL INTENTION: ' + S.feeling + '\n\nINTERVIEW ANSWERS:\n' + answersBlock + '\nCURRENT LYRICS:\n' + currentLyrics + '\n\nUSER WANTS THIS CHANGE: ' + note + '\n\nReturn this exact JSON:\n{\n  "title": "keep or improve the title",\n  "sections": [\n    {"label": "Verse 1", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Pre-Chorus", "lines": ["l1","l2"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Verse 2", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Bridge", "lines": ["l1","l2","l3"]},\n    {"label": "Final Chorus", "lines": ["l1","l2","l3","l4"]},\n    {"label": "Outro", "lines": ["l1","l2"]}\n  ],\n  "styleTags": ["tag1","tag2","tag3","tag4","tag5"],\n  "sunoPrompt": "under 120 chars: genre, tempo, instrumentation, mood, vocal style"\n}\n\nRules:\n- Make ONLY the requested change\n- Keep ' + S.name + ' naturally in lyrics at least twice\n- No filler lines. No clich\u00e9s. Write like a real songwriter.';
 
   try {
     var res = await fetch('/api/generate', {
@@ -827,6 +1049,257 @@ function resetLyricsEdit() {
   ta.value = '';
   btn.textContent = 'Edit';
   if (songResult) delete songResult._editedLyrics;
+}
+
+/* ── TALK IT THROUGH ──
+   Voice interview adapted from Embers: the songwriter speaks one question, then
+   listens hands-free and sends the answer after a pause. Typing works the same way. */
+var OPENERS = {
+  trip:      'Tell me about this trip. Where did you go, and who was there?',
+  college:   'Take me back. How did this crew first come together?',
+  memory:    'Tell me about this memory. Where were you when it happened?',
+  tradition: 'Tell me about this tradition. What happens, and who started it?',
+  sibling:   'What was it like growing up with {name}?',
+  parent:    'Tell me about {name}. What\'s the first thing people notice about them?',
+  friend:    'How did you and {name} become friends?',
+  partner:   'Tell me how you and {name} found each other.',
+  child:     'Tell me about {name}. What are they like right now, at this age?',
+  pet:       'Tell me about {name}. What\'s their personality like?',
+  milestone: 'Tell me about this milestone. What happened, and why does it matter?',
+  loss:      'Tell me about {name}. What do you miss most?',
+  default:   'Tell me about {name}. Where should this song start?'
+};
+var END_PHRASES = ["that's all", "that's it", "i'm done", "im done", 'write my song', 'write the song', "let's write it"];
+var SILENCE_NUDGE_MS = 2500;   // "Take your time…"
+var SILENCE_SEND_MS = 5000;    // auto-send after this much quiet (Embers' readyToSend)
+var MAX_TURNS = 10;
+
+var talk = { active: false, listening: false, busy: false, ready: false, voiceOn: true, userTurns: 0,
+  rec: null, committed: '', session: '', nudgeT: null, sendT: null, restarts: [], voice: null };
+
+function talkSystemPrompt() {
+  return 'You are a warm, curious songwriter interviewing someone out loud so you can write them a deeply personal song.\n\n' +
+    'THE SONG: for ' + S.name + '. About: ' + S.topic + '. Genre: ' + S.genre + (S.style ? ' (' + S.style + ')' : '') + '. They want it to make the listener feel: ' + S.feeling + '.\n\n' +
+    'Your job is to pull out the specific details that make a song unforgettable: names, places, sounds, smells, exact words someone said, inside jokes, the one moment everyone still brings up.\n\n' +
+    'RULES (never break these):\n' +
+    '1. Validate first. Open every reply by reacting to what they just said in a few words, echoing their own language.\n' +
+    '2. Ask exactly ONE question per reply. Never two.\n' +
+    '3. Chase specifics and senses: what did it look like, sound like, what exactly did they say.\n' +
+    '4. If emotion comes up, acknowledge it gently before moving on.\n' +
+    '5. This is spoken aloud: 2 short sentences max, under 40 words. No lists, no emoji, no markdown.\n' +
+    '6. Over the conversation, cover: the setting, the people, one standout moment, a small sensory detail, and what they most want the song to say.\n' +
+    '7. When you have enough for a great song (usually after 5 to 7 answers), or they say they are done, reply with one warm closing sentence and end with the exact token [READY].\n' +
+    'Never claim personal memories. If asked, you are an AI songwriter.';
+}
+
+function setTalkState(state, status) {
+  var orb = document.getElementById('talk-orb');
+  orb.className = 'talk-orb' + (state ? ' ' + state : '');
+  document.getElementById('talk-status').textContent = status || '';
+  var mic = document.getElementById('mic-btn');
+  mic.classList.toggle('on', talk.listening);
+  mic.textContent = talk.listening ? '⏹ Done talking' : '🎤 Tap to talk';
+}
+
+function refreshDone() {
+  document.getElementById('talk-done').classList.toggle('ready', talk.userTurns >= 2 || talk.ready);
+}
+
+function pickVoice() {
+  if (!window.speechSynthesis) return null;
+  var voices = speechSynthesis.getVoices().filter(function(v) { return /^en/i.test(v.lang); });
+  var prefs = ['Premium', 'Enhanced', 'Natural', 'Samantha', 'Ava', 'Allison', 'Google US English'];
+  for (var i = 0; i < prefs.length; i++) {
+    var m = voices.filter(function(v) { return v.name.indexOf(prefs[i]) !== -1; })[0];
+    if (m) return m;
+  }
+  return voices[0] || null;
+}
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function() { talk.voice = pickVoice(); };
+
+/* Speak, then hand the mic back. Safari sometimes never fires onend, so a timer backs it up. */
+function speak(text, then) {
+  var done = false;
+  function finish() { if (done) return; done = true; if (talk.active && then) then(); }
+  if (!talk.voiceOn || !window.speechSynthesis) { finish(); return; }
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  if (!talk.voice) talk.voice = pickVoice();
+  if (talk.voice) u.voice = talk.voice;
+  u.rate = 0.98;
+  u.onend = function() { setTimeout(finish, 600); };
+  u.onerror = finish;
+  setTalkState('speaking', 'Your songwriter');
+  speechSynthesis.speak(u);
+  setTimeout(finish, text.split(/\s+/).length * 450 + 2500);
+}
+
+function askAloud(text) {
+  document.getElementById('talk-q').textContent = text;
+  document.getElementById('talk-heard').textContent = '';
+  speak(text, function() {
+    if (talk.ready) { setTalkState('', 'Ready when you are'); return; }
+    if (SR) startListening(); else setTalkState('', 'Type your answer below');
+  });
+}
+
+function startTalk() {
+  S.transcript = [];
+  talk.active = true; talk.ready = false; talk.busy = false; talk.userTurns = 0;
+  document.getElementById('talk-custom').value = '';
+  refreshDone();
+  var opener = 'I\'m going to help write this song for ' + S.name + '. ' +
+    (OPENERS[S.topicKey] || OPENERS.default).replace('{name}', S.name);
+  S.transcript.push({ role: 'assistant', text: opener });
+  go('s-talk');
+  // Speak inside the tap so iPhone allows audio; the question shows on screen either way
+  askAloud(opener);
+}
+
+function stopTalk() {
+  talk.active = false;
+  stopListening();
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+
+function startListening() {
+  if (!SR || talk.listening || talk.busy || !talk.active) return;
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  talk.committed = ''; talk.session = ''; talk.restarts = [];
+  talk.listening = true;
+  document.getElementById('talk-heard').textContent = '';
+  setTalkState('listening', 'Listening…');
+  beginRecognition();
+}
+
+function beginRecognition() {
+  var rec = new SR();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = navigator.language || 'en-US';
+  rec.onresult = function(e) {
+    // Rebuild from all results each time; iPhone Safari repeats results otherwise
+    var finalTxt = '', interim = '';
+    for (var i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTxt += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    talk.session = finalTxt;
+    document.getElementById('talk-heard').textContent = (talk.committed + finalTxt + interim).trim();
+    armSilence();
+  };
+  rec.onerror = function(e) {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      talk.listening = false;
+      setTalkState('', 'Mic is blocked — type your answer below');
+    }
+  };
+  rec.onend = function() {
+    talk.committed += talk.session; talk.session = '';
+    if (!talk.listening || !talk.active) return;
+    // Browsers quietly end sessions; restart, but give up if it loops
+    var now = Date.now();
+    talk.restarts = talk.restarts.filter(function(t) { return now - t < 10000; });
+    if (talk.restarts.length >= 10) { talk.listening = false; setTalkState('', 'Tap to talk again'); return; }
+    talk.restarts.push(now);
+    try { beginRecognition(); } catch (err) { talk.listening = false; setTalkState('', 'Tap to talk again'); }
+  };
+  talk.rec = rec;
+  try { rec.start(); } catch (err) {}
+}
+
+function armSilence() {
+  clearTimeout(talk.nudgeT); clearTimeout(talk.sendT);
+  setTalkState('listening', 'Listening…');
+  talk.nudgeT = setTimeout(function() { if (talk.listening) setTalkState('listening', 'Take your time…'); }, SILENCE_NUDGE_MS);
+  talk.sendT = setTimeout(function() { if (talk.listening) submitSpoken(); }, SILENCE_SEND_MS);
+}
+
+function stopListening() {
+  clearTimeout(talk.nudgeT); clearTimeout(talk.sendT);
+  talk.listening = false;
+  if (talk.rec) { try { talk.rec.stop(); } catch (err) {} talk.rec = null; }
+}
+
+function submitSpoken() {
+  var text = (talk.committed + talk.session).trim() || document.getElementById('talk-heard').textContent.trim();
+  stopListening();
+  if (text) sendAnswer(text);
+  else setTalkState('', 'Tap to talk');
+}
+
+function toggleMic() {
+  if (!SR) { document.getElementById('talk-custom').focus(); return; }
+  if (talk.listening) submitSpoken(); else startListening();
+}
+
+function toggleVoice() {
+  talk.voiceOn = !talk.voiceOn;
+  if (!talk.voiceOn && window.speechSynthesis) speechSynthesis.cancel();
+  document.getElementById('voice-toggle').textContent = talk.voiceOn ? '🔊 Voice on' : '🔇 Voice off';
+}
+
+function sendTyped() {
+  var input = document.getElementById('talk-custom');
+  var text = input.value.trim();
+  if (!text || talk.busy) return;
+  input.value = '';
+  stopListening();
+  sendAnswer(text);
+}
+
+async function sendAnswer(text) {
+  if (talk.busy) return;
+  S.transcript.push({ role: 'user', text: text });
+  talk.userTurns++;
+  refreshDone();
+  updateChrome();
+  document.getElementById('talk-heard').textContent = '“' + text + '”';
+
+  var lower = text.toLowerCase();
+  var wantsOut = END_PHRASES.some(function(p) { return lower.indexOf(p) !== -1; });
+  if (wantsOut || talk.userTurns >= MAX_TURNS) { wrapUp('Love it. I\'ve got what I need — let\'s write this song.'); return; }
+
+  talk.busy = true;
+  setTalkState('thinking', 'Thinking…');
+  // API needs a user turn first; the opener is ours, so lead with a stub
+  var messages = [{ role: 'user', content: 'Start the interview.' }].concat(
+    S.transcript.map(function(t) { return { role: t.role, content: t.text }; }));
+  try {
+    var res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: talkSystemPrompt(), messages: messages, max_tokens: 200 })
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error.message || data.error);
+    var reply = data.content.map(function(i) { return i.text || ''; }).join('').trim();
+    talk.busy = false;
+    if (!talk.active) return;
+    if (reply.indexOf('[READY]') !== -1) { wrapUp(reply.replace('[READY]', '').trim()); return; }
+    S.transcript.push({ role: 'assistant', text: reply });
+    askAloud(reply);
+  } catch (err) {
+    talk.busy = false;
+    S.transcript.pop(); talk.userTurns--;
+    refreshDone();
+    setTalkState('', 'Lost the connection — try that again');
+    document.getElementById('talk-custom').value = text;
+  }
+}
+
+function wrapUp(line) {
+  talk.ready = true;
+  stopListening();
+  refreshDone();
+  var closing = line || 'I\'ve got everything I need. Let\'s write this song.';
+  S.transcript.push({ role: 'assistant', text: closing });
+  askAloud(closing);
+}
+
+function finishTalk() {
+  stopTalk();
+  showPromptReview();
 }
 
 /* ── BOOT ── */

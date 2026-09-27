@@ -26,11 +26,12 @@ export default async function handler(req) {
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
+      body: JSON.stringify(Object.assign({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1200,
+        // Short replies for the talk-it-through interview, full length for songs; capped either way
+        max_tokens: Math.min(Math.max(parseInt(body.max_tokens, 10) || 1200, 1), 1500),
         messages: body.messages
-      })
+      }, typeof body.system === 'string' && body.system ? { system: body.system } : {}))
     });
 
     const data = await response.json();
